@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CricBox — Hyderabad Box Cricket</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════
+       NAVIGATION BAR
+  ══════════════════════════════════ -->
+  <nav>
+    <div class="logo">
+      <div class="logo-dot">🏏</div>
+      CricBox
+    </div>
+    <div class="nav-city">📍 Hyderabad, TS</div>
+  </nav>
+
+  <!-- ══════════════════════════════════
+       HERO SECTION
+  ══════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-eyebrow" id="heroEyebrow">🏟️ Loading grounds…</div>
+    <h1>Find your perfect<br><em>box cricket ground.</em></h1>
+    <p class="hero-sub">
+      Compare prices, check real-time slot availability, and get
+      directions to box cricket arenas across Hyderabad.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num" id="statGrounds">—</div>
+        <div class="stat-label">Grounds</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="statPrice">—</div>
+        <div class="stat-label">Price range / hr</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="statAreas">—</div>
+        <div class="stat-label">Areas covered</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       FILTER + SEARCH BAR
+       (sticky — stays visible while scrolling)
+  ══════════════════════════════════ -->
+  <div class="controls-wrap">
+    <div class="controls">
+
+      <!-- Live search -->
+      <div class="search-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by name or area…"
+          oninput="renderCards()"
+        />
+      </div>
+
+      <!-- Area filter — options filled by JS from real data -->
+      <select id="areaFilter" onchange="renderCards()">
+        <option value="">All Areas</option>
+      </select>
+
+      <!-- Sort -->
+      <select id="sortFilter" onchange="renderCards()">
+        <option value="default">Sort by</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="rating">Top Rated</option>
+        <option value="name">Name A–Z</option>
+      </select>
+
+      <!-- Available Now toggle -->
+      <button class="pill-btn" id="availBtn" onclick="toggleAvail()">
+        ✅ Available Now
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       RESULTS COUNT
+  ══════════════════════════════════ -->
+  <div class="results-bar">
+    <p class="results-label" id="resultsLabel"></p>
+  </div>
+
+  <!-- ══════════════════════════════════
+       GROUND CARDS GRID
+       Cards are injected here by renderCards() in script.js
+  ══════════════════════════════════ -->
+  <div class="grid" id="grid"></div>
+
+  <!-- ══════════════════════════════════
+       GROUND DETAILS + BOOKING MODAL
+  ══════════════════════════════════ -->
+  <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+    <div class="modal" id="modal">
+
+      <!-- Modal header -->
+      <div class="modal-top">
+        <div>
+          <div class="modal-name" id="mName"></div>
+          <div class="modal-area" id="mArea"></div>
+        </div>
+        <button class="close-btn" onclick="closeModal()" aria-label="Close modal">✕</button>
+      </div>
+
+      <!-- Modal content — filled dynamically by openModal() in script.js -->
+      <div class="modal-body" id="mBody"></div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       BOOKING CONFIRMATION MODAL
+       Appears after user picks slots and clicks "Book"
+  ══════════════════════════════════ -->
+  <div class="overlay" id="bookingOverlay" onclick="handleBookingOverlayClick(event)">
+    <div class="modal booking-modal" id="bookingModal">
+      <div class="modal-top">
+        <div>
+          <div class="modal-name">Confirm Booking</div>
+          <div class="modal-area" id="bSummaryLine"></div>
+        </div>
+        <button class="close-btn" onclick="closeBookingModal()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Booking summary banner -->
+        <div class="confirm-banner" id="confirmBanner"></div>
+
+        <!-- User details form -->
+        <div class="form-section">
+          <div class="section-label">👤 Your Details</div>
+
+          <div class="form-group">
+            <label class="form-label" for="userName">Full Name *</label>
+            <input class="form-input" type="text" id="userName" placeholder="e.g. Ravi Kumar" />
+            <span class="form-error" id="userNameErr"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="userPhone">Phone Number *</label>
+            <input class="form-input" type="tel" id="userPhone" placeholder="e.g. 98491 23456" maxlength="15"/>
+            <span class="form-error" id="userPhoneErr"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="bookingDate">Date *</label>
+            <input class="form-input" type="date" id="bookingDate"/>
+            <span class="form-error" id="bookingDateErr"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="teamSize">Team Size (approx)</label>
+            <select class="form-input" id="teamSize">
+              <option value="">Select…</option>
+              <option value="6">6 players</option>
+              <option value="8">8 players</option>
+              <option value="10">10 players</option>
+              <option value="12">12 players</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Final confirm button -->
+        <button class="btn btn-primary btn-full" onclick="confirmBooking()">
+          🏏 Confirm &amp; Book
+        </button>
+
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">
+          The ground will call you to confirm. No payment needed right now.
+        </p>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TOAST NOTIFICATION
+  ══════════════════════════════════ -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══════════════════════════════════
+       FOOTER
+  ══════════════════════════════════ -->
+  <footer>
+    CricBox Hyderabad &nbsp;·&nbsp; Real ground listings &nbsp;·&nbsp; Built with HTML, CSS &amp; JS
+  </footer>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
