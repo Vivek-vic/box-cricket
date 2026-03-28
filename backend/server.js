@@ -10,6 +10,7 @@ const path     = require('path')
 // Import our route files
 const groundsRouter  = require('./routes/grounds.js')
 const bookingsRouter = require('./routes/bookings.js')
+const usersRouter = require('./routes/users.js')
 
 // This line starts the database (creates tables + seeds data)
 require('./database.js')
@@ -29,6 +30,7 @@ app.use(express.static(path.join(__dirname, '../frontend')))
 // ── ROUTES ─────────────────────────────────────────────────
 app.use('/api/grounds',  groundsRouter)
 app.use('/api/bookings', bookingsRouter)
+app.use('/api/users', usersRouter)
 
 // Catch-all — for any unknown route, send the frontend
 app.get('/{*path}', function(req, res) {

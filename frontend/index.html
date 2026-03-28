@@ -13,12 +13,19 @@
        NAVIGATION BAR
   ══════════════════════════════════ -->
   <nav>
-    <div class="logo">
-      <div class="logo-dot">🏏</div>
-      CricBox
-    </div>
+  <div class="logo">
+    <div class="logo-dot">🏏</div>
+    CricBox
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
     <div class="nav-city">📍 Hyderabad, TS</div>
-  </nav>
+    <div class="nav-city" id="navGreeting"></div>
+    <button class="nav-city" onclick="logout()"
+      style="cursor:pointer;border:none;background:var(--soft)">
+      Logout
+    </button>
+  </div>
+</nav>
 
   <!-- ══════════════════════════════════
        HERO SECTION
@@ -75,13 +82,13 @@
       </select>
 
       <!-- Sort -->
-      <select id="sortFilter" onchange="renderCards()">
-        <option value="default">Sort by</option>
-        <option value="price-asc">Price: Low → High</option>
-        <option value="price-desc">Price: High → Low</option>
-        <option value="rating">Top Rated</option>
-        <option value="name">Name A–Z</option>
-      </select>
+     <select id="sortFilter" onchange="renderCards()">
+  <option value="nearby">📍 Nearest First</option>
+  <option value="price-asc">Price: Low → High</option>
+  <option value="price-desc">Price: High → Low</option>
+  <option value="rating">Top Rated</option>
+  <option value="name">Name A–Z</option>
+</select>
 
       <!-- Available Now toggle -->
       <button class="pill-btn" id="availBtn" onclick="toggleAvail()">

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CricBox — Welcome</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="login.css"/>
+</head>
+<body>
+
+  <div class="page">
+
+    <!-- Left panel — branding -->
+    <div class="left-panel">
+      <div class="brand">
+        <div class="brand-logo">🏏</div>
+        <div class="brand-name">CricBox</div>
+      </div>
+      <h1 class="brand-headline">
+        Hyderabad's<br>
+        <em>box cricket</em><br>
+        grounds — all<br>
+        in one place.
+      </h1>
+      <p class="brand-sub">
+        Find grounds near you, check live slot
+        availability and book in seconds.
+      </p>
+      <div class="brand-stats">
+        <div class="bstat"><span>10+</span>Grounds</div>
+        <div class="bstat"><span>₹700</span>Starting price</div>
+        <div class="bstat"><span>Live</span>Availability</div>
+      </div>
+    </div>
+
+    <!-- Right panel — form -->
+    <div class="right-panel">
+      <div class="form-card">
+
+        <div class="form-header">
+          <h2>Welcome! Let's get started</h2>
+          <p>Enter your details to find grounds near you</p>
+        </div>
+
+        <!-- Name -->
+        <div class="field">
+          <label for="inp-name">Full Name</label>
+          <input
+            id="inp-name"
+            type="text"
+            placeholder="e.g. Vivek Reddy"
+            autocomplete="name"
+          />
+          <span class="field-err" id="err-name"></span>
+        </div>
+
+        <!-- Age -->
+        <div class="field">
+          <label for="inp-age">Age</label>
+          <input
+            id="inp-age"
+            type="number"
+            placeholder="e.g. 22"
+            min="5"
+            max="100"
+          />
+          <span class="field-err" id="err-age"></span>
+        </div>
+
+        <!-- Phone -->
+        <div class="field">
+          <label for="inp-phone">Phone Number</label>
+          <input
+            id="inp-phone"
+            type="tel"
+            placeholder="10-digit number"
+            maxlength="10"
+          />
+          <span class="field-err" id="err-phone"></span>
+        </div>
+
+        <!-- Location -->
+        <div class="field">
+          <label>Your Location</label>
+
+          <!-- GPS button -->
+          <button class="gps-btn" id="gpsBtn" onclick="detectLocation()">
+            <span id="gpsBtnIcon">📍</span>
+            <span id="gpsBtnText">Detect My Location</span>
+          </button>
+
+          <!-- GPS status message -->
+          <div class="gps-status" id="gpsStatus"></div>
+
+          <!-- Manual fallback — shown if GPS fails or denied -->
+          <div class="manual-location" id="manualWrap">
+            <div class="manual-label">
+              Or enter your area manually
+            </div>
+            <input
+              id="inp-area"
+              type="text"
+              placeholder="e.g. Uppal, Madhapur, Kompally"
+              class="manual-input"
+            />
+          </div>
+
+        </div>
+
+        <!-- Submit -->
+        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
+          Find Grounds Near Me →
+        </button>
+
+        <p class="form-note">
+          Already used CricBox? Enter the same phone number — we'll remember you.
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="login.js"></script>
+
+</body>
+</html>

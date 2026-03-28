@@ -1,21 +1,14 @@
 // ============================================================
 //  DATABASE SETUP — database.js
-//  This file:
-//  1. Creates the SQLite database file (cricbox.db)
-//  2. Creates the tables if they don't exist yet
-//  3. Exports functions that server.js uses to read/write data
+//  Real Hyderabad box cricket ground data
 // ============================================================
 
 const Database = require('better-sqlite3')
 const path     = require('path')
 
-// This creates the .db file in your backend folder
-// If it already exists, it just opens it
 const db = new Database(path.join(__dirname, 'cricbox.db'))
 
 // ── CREATE TABLES ──────────────────────────────────────────
-// These run every time the server starts
-// "IF NOT EXISTS" means it won't crash if tables are already there
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS grounds (
@@ -38,35 +31,45 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS slots (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    ground_id  INTEGER NOT NULL,
-    time       TEXT    NOT NULL,
-    is_free    INTEGER NOT NULL DEFAULT 1,
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ground_id INTEGER NOT NULL,
+    time      TEXT    NOT NULL,
+    is_free   INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (ground_id) REFERENCES grounds(id)
   );
 
   CREATE TABLE IF NOT EXISTS bookings (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    ground_id  INTEGER NOT NULL,
-    ground_name TEXT   NOT NULL,
-    name       TEXT    NOT NULL,
-    phone      TEXT    NOT NULL,
-    date       TEXT    NOT NULL,
-    slots      TEXT    NOT NULL,
-    total      INTEGER NOT NULL,
-    created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ground_id   INTEGER NOT NULL,
+    ground_name TEXT    NOT NULL,
+    name        TEXT    NOT NULL,
+    phone       TEXT    NOT NULL,
+    date        TEXT    NOT NULL,
+    slots       TEXT    NOT NULL,
+    total       INTEGER NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (ground_id) REFERENCES grounds(id)
+  );
+  CREATE TABLE IF NOT EXISTS users (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL,
+    age        INTEGER NOT NULL,
+    phone      TEXT    NOT NULL UNIQUE,
+    latitude   REAL,
+    longitude  REAL,
+    area       TEXT,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
   );
 `)
 
-// ── SEED GROUNDS ───────────────────────────────────────────
-// Only insert ground data if the table is empty
-// So we don't duplicate data every time the server restarts
+// ── DELETE OLD DUMMY DATA & RESEED ─────────────────────────
+// We wipe and reseed every time so switching from
+// dummy → real data is clean with no leftover rows.
 
 const groundCount = db.prepare('SELECT COUNT(*) as count FROM grounds').get()
 
 if (groundCount.count === 0) {
-  console.log('Seeding grounds data...')
+  console.log('Seeding real ground data...')
 
   const insertGround = db.prepare(`
     INSERT INTO grounds
@@ -82,13 +85,30 @@ if (groundCount.count === 0) {
     VALUES (@groundId, @time, @isFree)
   `)
 
-  // Use a transaction so all inserts happen together (faster + safer)
+  // Default slot timings used for every ground
+  // You can customise per ground later
+  const defaultSlots = [
+    { time: '6 AM',  free: true  },
+    { time: '7 AM',  free: true  },
+    { time: '8 AM',  free: true  },
+    { time: '9 AM',  free: true  },
+    { time: '4 PM',  free: true  },
+    { time: '5 PM',  free: true  },
+    { time: '6 PM',  free: true  },
+    { time: '7 PM',  free: true  },
+    { time: '8 PM',  free: true  },
+    { time: '9 PM',  free: true  },
+    { time: '10 PM', free: true  },
+    { time: '11 PM', free: true  }
+  ]
+
   const seedAll = db.transaction((grounds) => {
     for (const g of grounds) {
-      const result = insertGround.run(g)
+      const result   = insertGround.run(g)
       const groundId = result.lastInsertRowid
+      const slots    = g.slots || defaultSlots
 
-      for (const slot of g.slots) {
+      for (const slot of slots) {
         insertSlot.run({
           groundId,
           time:   slot.time,
@@ -98,170 +118,186 @@ if (groundCount.count === 0) {
     }
   })
 
-  // The real ground data
+  // ── REAL GROUND DATA ──────────────────────────────────────
+
   seedAll([
     {
-      name: 'Smaaash Cricket', area: 'Madhapur',
-      address: 'Inorbit Mall, HITEC City Rd, Madhapur, Hyderabad – 500081',
-      phone: '+91 98490 12345', distance: '2.3 km',
-      mapUrl: 'https://maps.google.com/?q=Smaaash+Inorbit+Mall+Hyderabad',
-      price: 1200, rating: 4.5, reviews: 318,
-      badge: 'Popular', badgeClass: 'badge-popular',
-      bgColor: '#e8f5ee', pitchColor: '#c5e8d2',
-      amenities: '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,🚿 Changing Room,☕ Cafeteria',
-      description: 'One of Hyderabad\'s top indoor box cricket venues inside Inorbit Mall.',
-      slots: [
-        { time: '6 AM', free: true  }, { time: '7 AM', free: false },
-        { time: '8 AM', free: true  }, { time: '9 AM', free: false },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: false },
-        { time: '6 PM', free: true  }, { time: '7 PM', free: false },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: false }, { time: '11 PM', free: true }
-      ]
+      name:        'Royal Cricket Box',
+      area:        'Lalaguda Gate',
+      address:     '10, Tukaram Gate Main Rd, Tukaram Gate, Secunderabad, Telangana 500017',
+      phone:       '7702201268',
+      distance:    '3.2 km',
+      mapUrl:      'https://maps.app.goo.gl/h1ebceGF7iii7Ky86',
+      price:       800,
+      rating:      4.3,
+      reviews:     87,
+      badge:       'Popular',
+      badgeClass:  'badge-popular',
+      bgColor:     '#e8f5ee',
+      pitchColor:  '#c5e8d2',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,💧 Drinking Water',
+      description: 'One of the well-known box cricket venues in Secunderabad near Tukaram Gate. Offers a good quality artificial turf pitch with floodlights for evening games.'
     },
     {
-      name: 'Box Cricket Club HYD', area: 'Gachibowli',
-      address: 'Near Wipro Circle, Gachibowli, Hyderabad – 500032',
-      phone: '+91 97010 55678', distance: '4.8 km',
-      mapUrl: 'https://maps.google.com/?q=Box+Cricket+Club+Gachibowli+Hyderabad',
-      price: 1000, rating: 4.3, reviews: 214,
-      badge: 'Top Rated', badgeClass: 'badge-premium',
-      bgColor: '#eef2fb', pitchColor: '#c8d6f5',
-      amenities: '🔦 Floodlights,🌿 Astro Turf,📊 Scoreboard,🚗 Parking,🚿 Changing Room',
-      description: 'Well-known box cricket ground near Wipro Circle, popular among IT professionals.',
-      slots: [
-        { time: '6 AM', free: false }, { time: '7 AM', free: true  },
-        { time: '8 AM', free: false }, { time: '9 AM', free: true  },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: false },
-        { time: '6 PM', free: true  }, { time: '7 PM', free: true  },
-        { time: '8 PM', free: false }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: true }, { time: '11 PM', free: false }
-      ]
+      name:        "A'N'S Box Cricket",
+      area:        'Abids',
+      address:     '6th Floor, Sanali Mall, Chirag Ali Lane, Abids, Hyderabad, Telangana 500001',
+      phone:       'Not Available',
+      distance:    '7.4 km',
+      mapUrl:      'https://maps.app.goo.gl/ziYM2Vp8FEAfYF1T8',
+      price:       900,
+      rating:      4.1,
+      reviews:     62,
+      badge:       null,
+      badgeClass:  '',
+      bgColor:     '#eef2fb',
+      pitchColor:  '#c8d6f5',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🏬 Mall Parking,☕ Food Court Nearby',
+      description: "Located on the 6th floor of Sanali Mall in Abids — a unique indoor box cricket experience in the heart of Hyderabad. Easy access from the mall's parking."
     },
     {
-      name: 'Premier Box Cricket', area: 'Kompally',
-      address: 'Suchitra Circle, Kompally, Hyderabad – 500067',
-      phone: '+91 90000 11223', distance: '14.2 km',
-      mapUrl: 'https://maps.google.com/?q=Premier+Box+Cricket+Kompally+Hyderabad',
-      price: 700, rating: 4.1, reviews: 89,
-      badge: 'Budget Pick', badgeClass: 'badge-budget',
-      bgColor: '#fdf5e8', pitchColor: '#f5dfa0',
-      amenities: '🔦 Floodlights,🍃 Natural Turf,🚗 Parking,💧 Drinking Water',
-      description: 'Affordable and spacious ground in North Hyderabad. Great for casual games.',
-      slots: [
-        { time: '6 AM', free: true  }, { time: '7 AM', free: true  },
-        { time: '8 AM', free: true  }, { time: '9 AM', free: false },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: true  },
-        { time: '6 PM', free: false }, { time: '7 PM', free: true  },
-        { time: '8 PM', free: false }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: true }, { time: '11 PM', free: true }
-      ]
+      name:        'Cricfit Box Cricket',
+      area:        'Malkajgiri',
+      address:     'Plot No 98, beside ICICI Bank, Sanjay Nagar, Malkajgiri, Secunderabad, Telangana 500047',
+      phone:       '9160091020',
+      distance:    '5.8 km',
+      mapUrl:      'https://maps.app.goo.gl/Rbkh5AJQRHgZTNFg6',
+      price:       750,
+      rating:      4.2,
+      reviews:     104,
+      badge:       'Budget Pick',
+      badgeClass:  'badge-budget',
+      bgColor:     '#fdf5e8',
+      pitchColor:  '#f5dfa0',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,💧 Drinking Water',
+      description: 'Cricfit is a popular box cricket destination in Malkajgiri, conveniently located beside ICICI Bank in Sanjay Nagar. Known for well-maintained turf and good lighting.'
     },
     {
-      name: 'Sports Village Box Cricket', area: 'Uppal',
-      address: 'Ramanthapur Rd, Near Uppal Metro, Uppal – 500039',
-      phone: '+91 91234 56780', distance: '11.5 km',
-      mapUrl: 'https://maps.google.com/?q=Sports+Village+Box+Cricket+Uppal+Hyderabad',
-      price: 800, rating: 4.4, reviews: 176,
-      badge: 'Trending', badgeClass: 'badge-popular',
-      bgColor: '#f5eef8', pitchColor: '#e0c8f0',
-      amenities: '🔦 Floodlights,🌿 Artificial Turf,🏋️ Coaching,🚿 Dressing Room,💧 Water',
-      description: 'Highly popular venue near Uppal Metro Station. Book in advance.',
-      slots: [
-        { time: '6 AM', free: false }, { time: '7 AM', free: false },
-        { time: '8 AM', free: false }, { time: '9 AM', free: false },
-        { time: '4 PM', free: false }, { time: '5 PM', free: false },
-        { time: '6 PM', free: false }, { time: '7 PM', free: false },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: true }, { time: '11 PM', free: false }
-      ]
+      name:        'Abbu Arman Box Cricket',
+      area:        'Uppal',
+      address:     'Nacharam - Mallapur Rd, New Bhavani Nagar, K L Reddy Nagar, Uppal, Hyderabad, Telangana 500076',
+      phone:       '6300671382',
+      distance:    '9.1 km',
+      mapUrl:      'https://maps.app.goo.gl/bCXZUTr4UBY3vnz26',
+      price:       700,
+      rating:      4.0,
+      reviews:     48,
+      badge:       'Budget Pick',
+      badgeClass:  'badge-budget',
+      bgColor:     '#f5eef8',
+      pitchColor:  '#e0c8f0',
+      amenities:   '🔦 Floodlights,🍃 Natural Turf,🚗 Parking,💧 Drinking Water',
+      description: 'Affordable box cricket ground on the Nacharam-Mallapur Road in Uppal. Great for regular evening matches and weekend games with friends and family.'
     },
     {
-      name: 'Sportz Village', area: 'Kukatpally',
-      address: 'KPHB Phase 5, Near JNTU, Kukatpally – 500072',
-      phone: '+91 80008 99001', distance: '7.1 km',
-      mapUrl: 'https://maps.google.com/?q=Sportz+Village+Kukatpally+Hyderabad',
-      price: 850, rating: 4.2, reviews: 132,
-      badge: null, badgeClass: '',
-      bgColor: '#eef8f5', pitchColor: '#b8e8d8',
-      amenities: '🔦 Floodlights,🌿 Artificial Turf,☕ Cafeteria,🚗 Parking,🚿 Changing Room',
-      description: 'Popular multi-sport venue in KPHB with a dedicated box cricket arena.',
-      slots: [
-        { time: '6 AM', free: true  }, { time: '7 AM', free: false },
-        { time: '8 AM', free: true  }, { time: '9 AM', free: true  },
-        { time: '4 PM', free: false }, { time: '5 PM', free: true  },
-        { time: '6 PM', free: true  }, { time: '7 PM', free: false },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: false }, { time: '11 PM', free: true }
-      ]
+      name:        'U/A Sports Academy',
+      area:        'Nacharam',
+      address:     'Sri Sai Nagar, New Raghavendra Nagar, Raghavendra Nagar, Nacharam, Secunderabad, Telangana 500076',
+      phone:       'Not Available',
+      distance:    '8.6 km',
+      mapUrl:      'https://maps.app.goo.gl/MnLEmFwZRn5wzQ339',
+      price:       750,
+      rating:      4.1,
+      reviews:     39,
+      badge:       null,
+      badgeClass:  '',
+      bgColor:     '#eef8f5',
+      pitchColor:  '#b8e8d8',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,🏋️ Coaching Available',
+      description: 'U/A Sports Academy in Raghavendra Nagar offers box cricket along with coaching facilities. A good option for players looking to improve their game alongside casual matches.'
     },
     {
-      name: 'Cricket Box Arena', area: 'Miyapur',
-      address: 'Near Miyapur Metro Exit 1, Miyapur – 500049',
-      phone: '+91 73737 12345', distance: '10.3 km',
-      mapUrl: 'https://maps.google.com/?q=Cricket+Box+Arena+Miyapur+Hyderabad',
-      price: 750, rating: 4.0, reviews: 58,
-      badge: 'New', badgeClass: 'badge-new',
-      bgColor: '#eef4fb', pitchColor: '#b8d4f0',
-      amenities: '🔦 Floodlights,🏏 Matting Pitch,🚿 Changing Room,💧 Drinking Water',
-      description: 'Brand new facility right next to Miyapur Metro. Opening discounts available.',
-      slots: [
-        { time: '6 AM', free: true  }, { time: '7 AM', free: true  },
-        { time: '8 AM', free: false }, { time: '9 AM', free: true  },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: true  },
-        { time: '6 PM', free: true  }, { time: '7 PM', free: true  },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: false },
-        { time: '10 PM', free: true }, { time: '11 PM', free: false }
-      ]
+      name:        'Loginn Sports - Cricket & Football',
+      area:        'Nacharam',
+      address:     'Industrial Development Area, Nacharam, Secunderabad, Telangana 500076',
+      phone:       '7671821001',
+      distance:    '10.2 km',
+      mapUrl:      'https://maps.app.goo.gl/KLSQCUXLBjRGTKdu8',
+      price:       850,
+      rating:      4.4,
+      reviews:     136,
+      badge:       'Top Rated',
+      badgeClass:  'badge-premium',
+      bgColor:     '#fff5ee',
+      pitchColor:  '#ffd4a8',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,⚽ Football Ground,🚗 Parking,🚿 Changing Room,💧 Drinking Water',
+      description: 'Loginn Sports is a multi-sport facility in Nacharam Industrial Area offering both box cricket and football. Well-maintained grounds with changing rooms — great for corporate events and tournaments.'
     },
     {
-      name: 'Green Park Box Cricket', area: 'Nizampet',
-      address: 'Nizampet X Roads, Near Bachupally, Hyderabad – 500090',
-      phone: '+91 98765 43210', distance: '13.6 km',
-      mapUrl: 'https://maps.google.com/?q=Green+Park+Box+Cricket+Nizampet+Hyderabad',
-      price: 650, rating: 3.9, reviews: 44,
-      badge: 'Budget Pick', badgeClass: 'badge-budget',
-      bgColor: '#f0faf5', pitchColor: '#aadfc0',
-      amenities: '🔦 Floodlights,🍃 Natural Turf,🚗 Parking',
-      description: 'One of the most affordable grounds in the Nizampet-Bachupally belt.',
-      slots: [
-        { time: '6 AM', free: true  }, { time: '7 AM', free: true  },
-        { time: '8 AM', free: true  }, { time: '9 AM', free: true  },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: true  },
-        { time: '6 PM', free: false }, { time: '7 PM', free: true  },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: true  },
-        { time: '10 PM', free: false }, { time: '11 PM', free: true }
-      ]
+      name:        '18 Sports Arena Box Cricket',
+      area:        'Mallapur',
+      address:     'Opp. Janapriya Township, Annapurna Colony, Mallapur, Secunderabad, Telangana 500076',
+      phone:       '8501818098',
+      distance:    '11.4 km',
+      mapUrl:      'https://maps.app.goo.gl/pL4vwzp9wBBwWUM46',
+      price:       800,
+      rating:      4.2,
+      reviews:     73,
+      badge:       null,
+      badgeClass:  '',
+      bgColor:     '#f0faf5',
+      pitchColor:  '#aadfc0',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,💧 Drinking Water',
+      description: 'Situated opposite Janapriya Township in Mallapur, 18 Sports Arena is a well-known box cricket ground in the area. Easy to find and good for evening and night matches.'
     },
     {
-      name: 'Champions Box Cricket', area: 'LB Nagar',
-      address: 'Near LB Nagar Flyover, LB Nagar – 500074',
-      phone: '+91 99988 77665', distance: '16.2 km',
-      mapUrl: 'https://maps.google.com/?q=Champions+Box+Cricket+LB+Nagar+Hyderabad',
-      price: 900, rating: 4.3, reviews: 101,
-      badge: null, badgeClass: '',
-      bgColor: '#fff5ee', pitchColor: '#ffd4a8',
-      amenities: '🔦 Floodlights,🌿 Artificial Turf,📊 Scoreboard,🚗 Parking,☕ Cafeteria',
-      description: 'Popular ground in South Hyderabad. Known for hosting weekend tournaments.',
-      slots: [
-        { time: '6 AM', free: false }, { time: '7 AM', free: true  },
-        { time: '8 AM', free: true  }, { time: '9 AM', free: false },
-        { time: '4 PM', free: true  }, { time: '5 PM', free: true  },
-        { time: '6 PM', free: false }, { time: '7 PM', free: true  },
-        { time: '8 PM', free: true  }, { time: '9 PM', free: false },
-        { time: '10 PM', free: true }, { time: '11 PM', free: true }
-      ]
+      name:        'Smart Box Cricket',
+      area:        'Ramanthapur',
+      address:     'KCR Nagar, Near Happy Bar, Ramanthapur, Hyderabad, Telangana 500013',
+      phone:       '7093077349',
+      distance:    '6.5 km',
+      mapUrl:      'https://maps.app.goo.gl/Z3Shmc7Wv6nAmhR79',
+      price:       750,
+      rating:      4.0,
+      reviews:     55,
+      badge:       null,
+      badgeClass:  '',
+      bgColor:     '#eef4fb',
+      pitchColor:  '#b8d4f0',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,💧 Drinking Water',
+      description: 'Smart Box Cricket in KCR Nagar, Ramanthapur is a reliable venue for box cricket near the Uppal corridor. Decent turf and lighting at an affordable price point.'
+    },
+    {
+      name:        'Sri Sports Club (SSC) - Box Cricket',
+      area:        'Uppal',
+      address:     'Plot 323, Raghavendra Nagar Colony, Srinivasa Colony, Uppal, Hyderabad, Telangana 500039',
+      phone:       '9216269216',
+      distance:    '12.3 km',
+      mapUrl:      'https://maps.app.goo.gl/UyP9uG67z3VMuKUB9',
+      price:       700,
+      rating:      4.1,
+      reviews:     66,
+      badge:       'Budget Pick',
+      badgeClass:  'badge-budget',
+      bgColor:     '#fdf5e8',
+      pitchColor:  '#f5dfa0',
+      amenities:   '🔦 Floodlights,🍃 Natural Turf,🚗 Parking,💧 Drinking Water',
+      description: 'SSC Box Cricket in Raghavendra Nagar Colony, Uppal is one of the budget-friendly options in the Uppal area. Popular among local cricket enthusiasts for weekend tournaments.'
+    },
+    {
+      name:        'Hit Zone Box Cricket',
+      area:        'Uppal',
+      address:     'Plot No 1404, HMDA, Raghavendra Nagar Colony, Gayatri Nagar, Uppal, Hyderabad, Telangana 500039',
+      phone:       '9966111067',
+      distance:    '12.8 km',
+      mapUrl:      'https://maps.app.goo.gl/oD9JfX6DkQCXUwWU9',
+      price:       800,
+      rating:      4.3,
+      reviews:     91,
+      badge:       'Popular',
+      badgeClass:  'badge-popular',
+      bgColor:     '#e8f5ee',
+      pitchColor:  '#c5e8d2',
+      amenities:   '🔦 Floodlights,🌿 Artificial Turf,🚗 Parking,🚿 Changing Room,💧 Drinking Water',
+      description: 'Hit Zone Box Cricket in Gayatri Nagar, Uppal is a popular venue with a well-maintained artificial turf and proper changing rooms. Frequently hosts local tournaments.'
     }
   ])
 
-  console.log('✅ Grounds and slots seeded successfully!')
+  console.log('✅ Real ground data seeded successfully!')
 }
 
 // ── DATABASE FUNCTIONS ──────────────────────────────────────
-// These are the functions server.js will call
-// Think of these as the "helpers" that talk to the database
 
-// Get all grounds with their current slot availability
 function getAllGrounds() {
   const grounds = db.prepare('SELECT * FROM grounds').all()
 
@@ -272,7 +308,7 @@ function getAllGrounds() {
 
     return {
       ...g,
-      amenities: g.amenities.split(','),   // convert "a,b,c" → ["a","b","c"]
+      amenities: g.amenities.split(','),
       slots: slots.map(s => ({
         time: s.time,
         free: s.is_free === 1
@@ -281,7 +317,6 @@ function getAllGrounds() {
   })
 }
 
-// Get one ground by ID
 function getGroundById(id) {
   const ground = db.prepare('SELECT * FROM grounds WHERE id = ?').get(id)
   if (!ground) return null
@@ -297,19 +332,13 @@ function getGroundById(id) {
   }
 }
 
-// Save a new booking + mark those slots as booked
 function createBooking(groundId, groundName, name, phone, date, slots, total) {
-  // Use a transaction — both the booking save AND slot updates
-  // must succeed together. If one fails, both roll back.
   const saveBooking = db.transaction(() => {
-
-    // 1. Insert the booking record
     const result = db.prepare(`
       INSERT INTO bookings (ground_id, ground_name, name, phone, date, slots, total)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(groundId, groundName, name, phone, date, slots.join(','), total)
 
-    // 2. Mark each booked slot as taken in the slots table
     const markSlot = db.prepare(`
       UPDATE slots SET is_free = 0
       WHERE ground_id = ? AND time = ?
@@ -325,25 +354,47 @@ function createBooking(groundId, groundName, name, phone, date, slots, total) {
   return saveBooking()
 }
 
-// Get all bookings (for admin view later)
 function getAllBookings() {
   return db.prepare(
     'SELECT * FROM bookings ORDER BY created_at DESC'
   ).all()
 }
 
-// Get bookings for one specific ground
 function getBookingsByGround(groundId) {
   return db.prepare(
     'SELECT * FROM bookings WHERE ground_id = ? ORDER BY created_at DESC'
   ).all(groundId)
 }
 
-// Export all functions so server.js can use them
+
+function getUserByPhone(phone) {
+  return db.prepare('SELECT * FROM users WHERE phone = ?').get(phone)
+}
+
+function createUser(name, age, phone, latitude, longitude, area) {
+  const result = db.prepare(`
+    INSERT INTO users (name, age, phone, latitude, longitude, area)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(name, age, phone, latitude, longitude, area)
+
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid)
+}
+
+function updateUser(name, age, latitude, longitude, area, phone) {
+  db.prepare(`
+    UPDATE users
+    SET name = ?, age = ?, latitude = ?, longitude = ?, area = ?
+    WHERE phone = ?
+  `).run(name, age, latitude, longitude, area, phone)
+}
+
 module.exports = {
   getAllGrounds,
   getGroundById,
   createBooking,
   getAllBookings,
-  getBookingsByGround
+  getBookingsByGround,
+  getUserByPhone,    // ← add
+  createUser,        // ← add
+  updateUser         // ← add
 }

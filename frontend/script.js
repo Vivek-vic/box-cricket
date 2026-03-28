@@ -15,6 +15,7 @@ let selectedSlots = {}     // { groundId: ['8 PM', '9 PM'] }
 // ============================================================
 
 async function init() {
+  if (!loadUserSession()) return
   await loadGrounds()
   populateAreaFilter()
   updateHeroStats()
@@ -26,7 +27,97 @@ async function init() {
 //  LOAD GROUNDS FROM BACKEND
 //  Replaces the old hardcoded array
 // ============================================================
+// ============================================================
+//  ADD THIS AT THE VERY TOP OF script.js
+//  (before the existing init() function)
+// ============================================================
 
+const API_URL = 'http://localhost:3000'
+
+// Current logged-in user — loaded from localStorage
+let currentUser = null
+
+
+// ============================================================
+//  LOAD USER SESSION
+//  If no user in localStorage → redirect to login page
+// ============================================================
+
+function loadUserSession() {
+  const stored = localStorage.getItem('cricbox_user')
+
+  if (!stored) {
+    window.location.href = 'login.html'
+    return false
+  }
+
+  try {
+    currentUser = JSON.parse(stored)
+
+    // Show greeting in nav
+    const navGreeting = document.getElementById('navGreeting')
+    if (navGreeting) {
+      navGreeting.textContent = `👋 ${currentUser.name}`
+    }
+
+    return true
+  } catch {
+    localStorage.removeItem('cricbox_user')
+    window.location.href = 'login.html'
+    return false
+  }
+}
+
+
+// ============================================================
+//  LOGOUT
+// ============================================================
+
+function logout() {
+  localStorage.removeItem('cricbox_user')
+  window.location.href = 'login.html'
+}
+
+
+// ============================================================
+//  DISTANCE CALCULATION
+//  Haversine formula — calculates km between two GPS points
+// ============================================================
+
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R    = 6371   // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a    =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+
+// ============================================================
+//  SORT GROUNDS BY DISTANCE FROM USER
+//  Called inside renderCards() when sort = 'nearby'
+//  Only works if user has GPS coordinates saved
+// ============================================================
+
+function sortByDistance(list) {
+  if (!currentUser || !currentUser.latitude || !currentUser.longitude) {
+    return list   // no GPS data — return unchanged
+  }
+
+  return [...list].sort((a, b) => {
+    // Each ground has lat/lng stored — we'll use the ground coords
+    // For now we use the ground's stored distance string as fallback
+    // When you add lat/lng to grounds table later, use getDistanceKm()
+    const distA = parseFloat(a.distance) || 999
+    const distB = parseFloat(b.distance) || 999
+    return distA - distB
+  })
+}
 async function loadGrounds() {
   try {
     const res  = await fetch('http://localhost:3000/api/grounds')
@@ -101,6 +192,8 @@ function renderCards() {
   if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
   if (sort === 'rating')     list.sort((a, b) => b.rating - a.rating)
   if (sort === 'name')       list.sort((a, b) => a.name.localeCompare(b.name))
+    // Add this BEFORE the other sort conditions
+if (sort === 'default' || sort === 'nearby') list = sortByDistance(list)
 
   document.getElementById('resultsLabel').innerHTML =
     `Showing <strong>${list.length}</strong> of <strong>${grounds.length}</strong> grounds`
