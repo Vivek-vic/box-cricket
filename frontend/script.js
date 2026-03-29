@@ -122,7 +122,8 @@ function sortByDistance(list) {
 }
 async function loadGrounds() {
   try {
-    const res  = await fetch('http://localhost:3000/api/grounds')
+    // const res  = await fetch('http://localhost:3000/api/grounds')
+    const res = await fetch(`${API_URL}/api/grounds`)
     const data = await res.json()
 
     if (data.success) {
@@ -689,7 +690,8 @@ async function handleBooking(groundId) {
   bookBtn.textContent = '⏳ Booking...'
 
   try {
-    const res = await fetch('http://localhost:3000/api/bookings', {
+    // const res = await fetch('http://localhost:3000/api/bookings', {
+    const res = await fetch(`${API_URL}/api/bookings`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
