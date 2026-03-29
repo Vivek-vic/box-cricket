@@ -8,7 +8,10 @@
 //  5. Save user to localStorage → redirect to index.html
 // ============================================================
 
-const API_URL = 'http://localhost:3000'
+// const API_URL = 'http://localhost:3000'
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : 'https://cricbox-backend-kvv3.onrender.com'
 
 // Stores GPS coordinates if detected
 let detectedLat  = null

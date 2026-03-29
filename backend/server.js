@@ -20,7 +20,15 @@ const app  = express()
 const PORT = 3000
 
 // Middlewares — these run on every request before your routes
-app.use(cors())               // allow frontend on port 5500 to talk to us
+// app.use(cors())
+  app.use(cors({
+  origin: [
+    'http://localhost:5500',
+    'http://localhost:3000',
+    'https://cricbox-backend-kvv3.onrender.com',
+    'https://box-cricket.vercel.app'
+  ]
+}))               // allow frontend on port 5500 to talk to us
 app.use(express.json())       // parse JSON request bodies
 
 // Serve your frontend files directly from the backend

@@ -32,7 +32,9 @@ async function init() {
 //  (before the existing init() function)
 // ============================================================
 
-const API_URL = 'http://localhost:3000'
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : 'https://cricbox-backend-kvv3.onrender.com'
 
 // Current logged-in user — loaded from localStorage
 let currentUser = null
