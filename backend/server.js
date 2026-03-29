@@ -25,9 +25,9 @@ const PORT = 3000
   origin: [
     'http://localhost:5500',
     'http://localhost:3000',
-    'https://cricbox-backend-kvv3.onrender.com',
     'https://box-cricket-liard.vercel.app'
-  ]
+  ],
+  credentials: true
 }))               // allow frontend on port 5500 to talk to us
 app.use(express.json())       // parse JSON request bodies
 
