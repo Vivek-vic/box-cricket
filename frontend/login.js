@@ -9,10 +9,9 @@
 // ============================================================
 
 // const API_URL = 'http://localhost:3000'
-const API_URL = window.location.hostname === 'localhost'
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
   : 'https://cricbox-backend-kvv3.onrender.com'
-
 // Stores GPS coordinates if detected
 let detectedLat  = null
 let detectedLng  = null

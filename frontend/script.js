@@ -32,12 +32,20 @@ async function init() {
 //  (before the existing init() function)
 // ============================================================
 
-const API_URL = window.location.hostname === 'localhost'
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
   : 'https://cricbox-backend-kvv3.onrender.com'
 
 // Current logged-in user — loaded from localStorage
 let currentUser = null
+
+function getCardDistance(ground) {
+  if (!currentUser || !currentUser.latitude || !currentUser.longitude || !ground.lat || !ground.lng) {
+    return ground.distance || 'Distance N/A'
+  }
+  const km = getDistanceKm(currentUser.latitude, currentUser.longitude, ground.lat, ground.lng)
+  return `${km.toFixed(1)} km away`
+}
 
 
 // ============================================================
@@ -108,15 +116,12 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 
 function sortByDistance(list) {
   if (!currentUser || !currentUser.latitude || !currentUser.longitude) {
-    return list   // no GPS data — return unchanged
+    return list
   }
 
   return [...list].sort((a, b) => {
-    // Each ground has lat/lng stored — we'll use the ground coords
-    // For now we use the ground's stored distance string as fallback
-    // When you add lat/lng to grounds table later, use getDistanceKm()
-    const distA = parseFloat(a.distance) || 999
-    const distB = parseFloat(b.distance) || 999
+    const distA = getDistanceKm(currentUser.latitude, currentUser.longitude, a.lat, a.lng)
+    const distB = getDistanceKm(currentUser.latitude, currentUser.longitude, b.lat, b.lng)
     return distA - distB
   })
 }
@@ -252,7 +257,7 @@ function buildCard(ground, index) {
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
             <circle cx="12" cy="10" r="3"/>
           </svg>
-          ${ground.area} &nbsp;·&nbsp; ${ground.distance}
+          ${ground.area} &nbsp;·&nbsp; ${getCardDistance(ground)}
         </div>
         <div class="card-divider"></div>
         <div class="card-top-row">
