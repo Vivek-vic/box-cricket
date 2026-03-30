@@ -49,7 +49,7 @@ function detectLocation() {
   // Ask browser for GPS coordinates
   navigator.geolocation.getCurrentPosition(
     // ── SUCCESS ──
-    function(position) {
+    async function(position) {
       detectedLat   = position.coords.latitude
       detectedLng   = position.coords.longitude
       locationReady = true
@@ -60,9 +60,30 @@ function detectLocation() {
       btnText.textContent = 'Location Detected!'
       btn.disabled = false
 
-      setGPSStatus('success',
-        `📍 Got your location (${detectedLat.toFixed(4)}, ${detectedLng.toFixed(4)})`
-      )
+      // Show coordinates temporarily while fetching area name
+setGPSStatus('success', '📍 Getting your area name...')
+
+// Reverse geocode — convert coordinates to area name
+try {
+  const geoRes = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?lat=${detectedLat}&lon=${detectedLng}&format=json`
+  )
+  const geoData = await geoRes.json()
+
+  // Extract the most useful parts of the address
+  const addr     = geoData.address
+  const area     = addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.county || ''
+  const city     = addr.city || addr.state_district || 'Hyderabad'
+  const areaName = area ? `${area}, ${city}` : city
+
+  setGPSStatus('success', `📍 Detected: ${areaName}`)
+
+} catch (err) {
+  // If reverse geocoding fails, just show coordinates as fallback
+  setGPSStatus('success',
+    `📍 Got your location (${detectedLat.toFixed(4)}, ${detectedLng.toFixed(4)})`
+  )
+}
 
       // Hide manual input since GPS worked
       manualWrap.style.display = 'none'
