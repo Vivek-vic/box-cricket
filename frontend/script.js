@@ -649,94 +649,149 @@ function updateBookingSummary(groundId) {
 //  HANDLE BOOKING — real POST request to backend
 // ============================================================
 
-async function handleBooking(groundId) {
-  const ground   = grounds.find(g => g.id === groundId)
-  const selected = selectedSlots[groundId] || []
+// async function handleBooking(groundId) {
+//   const ground   = grounds.find(g => g.id === groundId)
+//   const selected = selectedSlots[groundId] || []
 
-  // Validate slots
+//   // Validate slots
+//   if (selected.length === 0) {
+//     showToast('⚠️ Please select at least one slot first')
+//     return
+//   }
+
+//   // Validate form
+//   const name  = document.getElementById(`fname-${groundId}`).value.trim()
+//   const phone = document.getElementById(`fphone-${groundId}`).value.trim()
+//   const date  = document.getElementById(`fdate-${groundId}`).value
+
+//   if (!name) {
+//     showToast('⚠️ Please enter your name')
+//     document.getElementById(`fname-${groundId}`).focus()
+//     return
+//   }
+
+//   if (!phone || phone.length !== 10 || isNaN(phone)) {
+//     showToast('⚠️ Please enter a valid 10-digit phone number')
+//     document.getElementById(`fphone-${groundId}`).focus()
+//     return
+//   }
+
+//   if (!date) {
+//     showToast('⚠️ Please select a date')
+//     document.getElementById(`fdate-${groundId}`).focus()
+//     return
+//   }
+
+//   // Sort slots in order
+//   const allSlots  = ground.slots
+//   const sorted    = [...selected].sort(
+//     (a, b) => allSlots.findIndex(s => s.time === a) - allSlots.findIndex(s => s.time === b)
+//   )
+//   const totalCost = sorted.length * ground.price
+
+//   // Disable button while request is in flight
+//   const bookBtn       = document.getElementById(`bookBtn-${groundId}`)
+//   bookBtn.disabled    = true
+//   bookBtn.textContent = '⏳ Booking...'
+
+//   try {
+//     // const res = await fetch('http://localhost:3000/api/bookings', {
+//     const res = await fetch(`${API_URL}/api/bookings`, {
+//       method:  'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         groundId,
+//         groundName: ground.name,
+//         name,
+//         phone,
+//         date,
+//         slots:  sorted,
+//         total:  totalCost
+//       })
+//     })
+
+//     const data = await res.json()
+
+//     if (data.success) {
+//       showToast(`✅ Booking confirmed! ID #${data.bookingId}`)
+
+//       // Update local slot data so UI reflects immediately
+//       sorted.forEach(time => {
+//         const slot = ground.slots.find(s => s.time === time)
+//         if (slot) slot.free = false
+//       })
+
+//       selectedSlots[groundId] = []
+//       closeModal()
+//       renderCards()
+
+//     } else {
+//       showToast(`⚠️ ${data.error}`)
+//       bookBtn.disabled    = false
+//       bookBtn.textContent = '🏏 Try Again'
+//     }
+
+//   } catch (err) {
+//     console.error('Booking error:', err)
+//     showToast('⚠️ Could not connect to server')
+//     bookBtn.disabled    = false
+//     bookBtn.textContent = '🏏 Confirm Booking'
+//   }
+// }
+async function handleBooking(groundId) {
+  const ground   = grounds.find(g => g.id === groundId);
+  const selected = selectedSlots[groundId] || [];
+
+  // 1. Validate slots
   if (selected.length === 0) {
-    showToast('⚠️ Please select at least one slot first')
-    return
+    showToast('⚠️ Please select at least one slot first');
+    return;
   }
 
-  // Validate form
-  const name  = document.getElementById(`fname-${groundId}`).value.trim()
-  const phone = document.getElementById(`fphone-${groundId}`).value.trim()
-  const date  = document.getElementById(`fdate-${groundId}`).value
+  // 2. Validate form inputs
+  const name  = document.getElementById(`fname-${groundId}`).value.trim();
+  const phone = document.getElementById(`fphone-${groundId}`).value.trim();
+  const date  = document.getElementById(`fdate-${groundId}`).value;
 
   if (!name) {
-    showToast('⚠️ Please enter your name')
-    document.getElementById(`fname-${groundId}`).focus()
-    return
+    showToast('⚠️ Please enter your name');
+    return;
   }
-
-  if (!phone || phone.length !== 10 || isNaN(phone)) {
-    showToast('⚠️ Please enter a valid 10-digit phone number')
-    document.getElementById(`fphone-${groundId}`).focus()
-    return
+  if (!phone || phone.length !== 10) {
+    showToast('⚠️ Enter a valid 10-digit phone');
+    return;
   }
-
   if (!date) {
-    showToast('⚠️ Please select a date')
-    document.getElementById(`fdate-${groundId}`).focus()
-    return
+    showToast('⚠️ Please select a date');
+    return;
   }
 
-  // Sort slots in order
-  const allSlots  = ground.slots
-  const sorted    = [...selected].sort(
-    (a, b) => allSlots.findIndex(s => s.time === a) - allSlots.findIndex(s => s.time === b)
-  )
-  const totalCost = sorted.length * ground.price
+  // 3. Prepare the data
+  const sorted = [...selected].sort(
+    (a, b) => ground.slots.findIndex(s => s.time === a) - ground.slots.findIndex(s => s.time === b)
+  );
+  const totalCost = sorted.length * ground.price;
 
-  // Disable button while request is in flight
-  const bookBtn       = document.getElementById(`bookBtn-${groundId}`)
-  bookBtn.disabled    = true
-  bookBtn.textContent = '⏳ Booking...'
+  const pendingBooking = {
+    groundId,
+    groundName: ground.name,
+    name,
+    phone,
+    date,
+    slots: sorted,
+    total: totalCost
+  };
 
-  try {
-    // const res = await fetch('http://localhost:3000/api/bookings', {
-    const res = await fetch(`${API_URL}/api/bookings`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        groundId,
-        groundName: ground.name,
-        name,
-        phone,
-        date,
-        slots:  sorted,
-        total:  totalCost
-      })
-    })
-
-    const data = await res.json()
-
-    if (data.success) {
-      showToast(`✅ Booking confirmed! ID #${data.bookingId}`)
-
-      // Update local slot data so UI reflects immediately
-      sorted.forEach(time => {
-        const slot = ground.slots.find(s => s.time === time)
-        if (slot) slot.free = false
-      })
-
-      selectedSlots[groundId] = []
-      closeModal()
-      renderCards()
-
-    } else {
-      showToast(`⚠️ ${data.error}`)
-      bookBtn.disabled    = false
-      bookBtn.textContent = '🏏 Try Again'
-    }
-
-  } catch (err) {
-    console.error('Booking error:', err)
-    showToast('⚠️ Could not connect to server')
-    bookBtn.disabled    = false
-    bookBtn.textContent = '🏏 Confirm Booking'
-  }
+  // 4. Save to LocalStorage and Redirect
+  // This "passes" the data to the payment.html page
+  localStorage.setItem('pendingBooking', JSON.stringify(pendingBooking));
+  
+  showToast('Redirecting to payment...');
+  
+  // Give the toast a moment to show before moving pages
+  setTimeout(() => {
+    window.location.href = 'payment.html';
+  }, 800);
 }
 
 
@@ -744,19 +799,33 @@ async function handleBooking(groundId) {
 //  CLOSE MODAL
 // ============================================================
 
+// function closeModal() {
+//   document.getElementById('overlay').classList.remove('open')
+//   document.body.style.overflow = ''
+// }
+
+// function handleOverlayClick(event) {
+//   if (event.target === document.getElementById('overlay')) closeModal()
+// }
+
+// document.addEventListener('keydown', e => {
+//   if (e.key === 'Escape') closeModal()
+// })
+// --- UI HELPERS (Keep these at the bottom) ---
+
 function closeModal() {
-  document.getElementById('overlay').classList.remove('open')
-  document.body.style.overflow = ''
+  const overlay = document.getElementById('overlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function handleOverlayClick(event) {
-  if (event.target === document.getElementById('overlay')) closeModal()
+  if (event.target === document.getElementById('overlay')) closeModal();
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal()
-})
-
+  if (e.key === 'Escape') closeModal();
+});
 
 // ============================================================
 //  HELPER — today's date string for date input min attribute
