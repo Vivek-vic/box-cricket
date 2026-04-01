@@ -1,150 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Checkout | CricBox</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        body {
-            background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        .checkout-container {
-            background: var(--glass);
-            width: 100%;
-            max-width: 450px;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            padding: 30px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .step-indicator {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .booking-ticket {
-            background: #fff;
-            border: 2px dashed var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
-            position: relative;
-        }
-        .ticket-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .label { color: var(--text-light); font-size: 0.9rem; }
-        .value { color: var(--text-dark); font-weight: 600; text-align: right; }
-        
-        .total-section {
-            border-top: 2px solid var(--bg);
-            padding-top: 15px;
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .total-price {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-        .payment-methods {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-        .method-card {
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .method-card:hover { border-color: var(--primary); background: #f0f7ff; }
-        .method-card.active {
-            border-color: var(--primary);
-            background: #f0f7ff;
-            position: relative;
-        }
-        .method-card input { display: none; }
-        
-        .pay-btn {
-            width: 100%;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-            transition: 0.3s;
-        }
-        .pay-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4); }
-        .pay-btn:disabled { background: #ccc; cursor: not-allowed; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Checkout | CricBox — Hyderabad Box Cricket</title>
+  <meta name="description" content="Complete your CricBox booking. Review your slot details and pay securely." />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Payment page overrides ─────────────────────────── */
+    .payment-hero {
+      padding: 40px 24px 32px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .payment-hero h1 {
+      font-size: clamp(26px, 4vw, 38px);
+      margin-bottom: 6px;
+    }
+
+    .payment-hero .hero-sub {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* ── Checkout card ──────────────────────────────────── */
+    .checkout-card {
+      max-width: 520px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+
+    /* ── Booking ticket (dashed receipt style) ─────────── */
+    .booking-ticket {
+      background: var(--white);
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      animation: rise .35s ease both;
+    }
+
+    .ticket-head {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .t-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .t-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: right;
+      max-width: 65%;
+    }
+
+    .ticket-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0;
+    }
+
+    .ticket-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .ticket-total-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .ticket-total-amount {
+      font-family: 'Instrument Serif', serif;
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    /* ── Section label (same as modal) ──────────────────── */
+    .pay-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+
+    /* ── Payment method cards ─────────────────────────── */
+    .payment-methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .method-card {
+      background: var(--soft);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .method-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    .method-card.active {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .method-card input {
+      display: none;
+    }
+
+    .method-icon {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+
+    .method-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .method-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Pay button (extends .btn / .btn-primary) ─────── */
+    .pay-btn {
+      width: 100%;
+      flex: none;
+      padding: 15px;
+      font-size: 15px;
+      border-radius: 10px;
+      margin-top: 4px;
+      transition: all .2s;
+    }
+
+    .pay-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(26, 26, 24, .18);
+    }
+
+    .pay-btn:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Security note ───────────────────────────────── */
+    .secure-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+
+    /* ── Step badge (same idea as hero-eyebrow) ──────── */
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+  </style>
 </head>
+
 <body>
 
-    <div class="checkout-container">
-        <div class="header">
-            <span class="step-indicator">Step 2 of 2</span>
-            <h2 style="margin:0; color: var(--text-dark);">Confirm Booking</h2>
-        </div>
+  <!-- ══════════════════════════════════
+       NAVIGATION BAR  (identical to index.html)
+  ══════════════════════════════════ -->
+  <nav>
+    <div class="logo">
+      <div class="logo-dot">🏏</div>
+      CricBox
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="nav-city">📍 Hyderabad, TS</div>
+      <a class="nav-city" href="index.html" style="text-decoration:none;cursor:pointer;">
+        ← Back to Grounds
+      </a>
+    </div>
+  </nav>
 
-        <div class="booking-ticket" id="ticketContent">
-            <div style="text-align:center; color: #999;">Loading details...</div>
-        </div>
+  <!-- ══════════════════════════════════
+       PAGE HEADER  (matches hero style)
+  ══════════════════════════════════ -->
+  <div class="payment-hero">
+    <div class="step-badge">🏏 Step 2 of 2</div>
+    <h1>Confirm &amp; <em>pay.</em></h1>
+    <p class="hero-sub">
+      Review your booking details below and choose how you'd like to pay.
+    </p>
+  </div>
 
-        <h4 style="margin-bottom:15px; color: var(--text-dark);">Payment Method</h4>
-        <div class="payment-methods">
-            <label class="method-card active">
-                <input type="radio" name="payMethod" value="UPI" checked>
-                <div style="font-size: 1.2rem;">📱</div>
-                <div style="font-size: 0.8rem; font-weight: 600; margin-top:5px;">UPI / QR</div>
-            </label>
-            <label class="method-card">
-                <input type="radio" name="payMethod" value="CASH">
-                <div style="font-size: 1.2rem;">💵</div>
-                <div style="font-size: 0.8rem; font-weight: 600; margin-top:5px;">At Venue</div>
-            </label>
-        </div>
+  <!-- ══════════════════════════════════
+       CHECKOUT CARD
+  ══════════════════════════════════ -->
+  <div class="checkout-card">
 
-        <button class="pay-btn" id="finalPayBtn" onclick="processPayment()">
-            Confirm & Pay ₹<span id="btnAmount">0</span>
-        </button>
-        
-        <p style="text-align:center; font-size: 0.85rem; color: #999; margin-top: 15px;">
-            Secure 256-bit SSL Encrypted Payment
-        </p>
+    <!-- Booking ticket -->
+    <div class="booking-ticket" id="ticketContent">
+      <div class="ticket-head">📋 Booking Summary</div>
+      <div style="text-align:center;color:var(--muted);padding:20px 0;">Loading details…</div>
     </div>
 
-    <script src="payment.js"></script>
+    <!-- Payment method -->
+    <div class="pay-section-label">💳 Payment Method</div>
+    <div class="payment-methods">
+      <label class="method-card active" id="methodUPI">
+        <input type="radio" name="payMethod" value="UPI" checked />
+        <div class="method-icon">📱</div>
+        <div class="method-name">UPI / QR</div>
+        <div class="method-sub">Instant transfer</div>
+      </label>
+      <label class="method-card" id="methodCash">
+        <input type="radio" name="payMethod" value="CASH" />
+        <div class="method-icon">💵</div>
+        <div class="method-name">Cash at Venue</div>
+        <div class="method-sub">Pay on arrival</div>
+      </label>
+    </div>
+
+    <!-- Confirm button -->
+    <button class="btn btn-primary pay-btn" id="finalPayBtn" onclick="processPayment()">
+      🏏 Confirm &amp; Pay ₹<span id="btnAmount">0</span>
+    </button>
+
+    <p class="secure-note">
+      🔒 256-bit SSL encrypted &nbsp;·&nbsp; Your data is safe with us
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════
+       FOOTER  (identical to index.html)
+  ══════════════════════════════════ -->
+  <footer>
+    CricBox Hyderabad &nbsp;·&nbsp; Real ground listings &nbsp;·&nbsp; Built with HTML, CSS &amp; JS
+  </footer>
+
+  <script src="payment.js"></script>
+
 </body>
+
 </html>
