@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CricBox — Booking Confirmed!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="booking-confirmation.css"/>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-dot">🏏</div>
+      CricBox
+    </div>
+    <div class="nav-city">📍 Hyderabad, TS</div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="page">
+
+    <!-- Success animation -->
+    <div class="success-circle" id="successCircle">
+      <div class="checkmark">✓</div>
+    </div>
+
+    <h1 class="confirm-title">Booking Confirmed!</h1>
+    <p class="confirm-sub">Show this page to the ground staff as your booking proof</p>
+
+    <!-- Booking Card — this is the "ticket" -->
+    <div class="ticket" id="ticketCard">
+
+      <!-- Ticket header -->
+      <div class="ticket-header">
+        <div class="ticket-header-left">
+          <div class="ticket-label">BOOKING ID</div>
+          <div class="ticket-id" id="ticketId">—</div>
+        </div>
+        <div class="ticket-status">✅ CONFIRMED</div>
+      </div>
+
+      <div class="ticket-divider">
+        <div class="ticket-hole left"></div>
+        <div class="ticket-dashes"></div>
+        <div class="ticket-hole right"></div>
+      </div>
+
+      <!-- Ground info -->
+      <div class="ticket-body">
+
+        <div class="ticket-row big">
+          <div class="ticket-field">
+            <div class="ticket-field-label">GROUND</div>
+            <div class="ticket-field-value" id="tGround">—</div>
+          </div>
+        </div>
+
+        <div class="ticket-row">
+          <div class="ticket-field">
+            <div class="ticket-field-label">DATE</div>
+            <div class="ticket-field-value" id="tDate">—</div>
+          </div>
+          <div class="ticket-field">
+            <div class="ticket-field-label">TIME</div>
+            <div class="ticket-field-value" id="tTime">—</div>
+          </div>
+        </div>
+
+        <div class="ticket-row">
+          <div class="ticket-field">
+            <div class="ticket-field-label">DURATION</div>
+            <div class="ticket-field-value" id="tDuration">—</div>
+          </div>
+          <div class="ticket-field">
+            <div class="ticket-field-label">AMOUNT PAID</div>
+            <div class="ticket-field-value green" id="tTotal">—</div>
+          </div>
+        </div>
+
+        <div class="ticket-divider-thin"></div>
+
+        <div class="ticket-row">
+          <div class="ticket-field">
+            <div class="ticket-field-label">BOOKED BY</div>
+            <div class="ticket-field-value" id="tName">—</div>
+          </div>
+          <div class="ticket-field">
+            <div class="ticket-field-label">PHONE</div>
+            <div class="ticket-field-value" id="tPhone">—</div>
+          </div>
+        </div>
+
+        <div class="ticket-row">
+          <div class="ticket-field">
+            <div class="ticket-field-label">AREA</div>
+            <div class="ticket-field-value" id="tArea">—</div>
+          </div>
+          <div class="ticket-field">
+            <div class="ticket-field-label">BOOKED ON</div>
+            <div class="ticket-field-value" id="tBookedOn">—</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Barcode-style decoration -->
+      <div class="ticket-divider">
+        <div class="ticket-hole left"></div>
+        <div class="ticket-dashes"></div>
+        <div class="ticket-hole right"></div>
+      </div>
+
+      <div class="ticket-footer">
+        <div class="barcode" id="barcodeStrips"></div>
+        <div class="barcode-text" id="barcodeText">—</div>
+      </div>
+
+    </div>
+
+    <!-- Action buttons -->
+    <div class="actions">
+
+      <button class="btn btn-outline" onclick="copyBookingId()">
+        📋 Copy Booking ID
+      </button>
+
+      <button class="btn btn-outline" onclick="printTicket()">
+        🖨️ Print / Save PDF
+      </button>
+
+      <a class="btn btn-primary" href="index.html">
+        🏠 Back to Grounds
+      </a>
+
+    </div>
+
+    <!-- Info note -->
+    <div class="info-note">
+      <strong>📌 Important:</strong> Please show this confirmation to the ground staff before your session.
+      Your Booking ID is <strong id="infoBookingId">—</strong>.
+      For any issues call the ground directly.
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="booking-confirmation.js"></script>
+
+</body>
+</html>

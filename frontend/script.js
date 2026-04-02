@@ -739,59 +739,99 @@ function updateBookingSummary(groundId) {
 //   }
 // }
 async function handleBooking(groundId) {
-  const ground   = grounds.find(g => g.id === groundId);
-  const selected = selectedSlots[groundId] || [];
+  const ground   = grounds.find(g => g.id === groundId)
+  const selected = selectedSlots[groundId] || []
 
-  // 1. Validate slots
+  // Validate slots
   if (selected.length === 0) {
-    showToast('⚠️ Please select at least one slot first');
-    return;
+    showToast('⚠️ Please select at least one slot first')
+    return
   }
 
-  // 2. Validate form inputs
-  const name  = document.getElementById(`fname-${groundId}`).value.trim();
-  const phone = document.getElementById(`fphone-${groundId}`).value.trim();
-  const date  = document.getElementById(`fdate-${groundId}`).value;
+  // Validate form
+  const name  = document.getElementById(`fname-${groundId}`).value.trim()
+  const phone = document.getElementById(`fphone-${groundId}`).value.trim()
+  const date  = document.getElementById(`fdate-${groundId}`).value
 
   if (!name) {
-    showToast('⚠️ Please enter your name');
-    return;
+    showToast('⚠️ Please enter your name')
+    return
   }
-  if (!phone || phone.length !== 10) {
-    showToast('⚠️ Enter a valid 10-digit phone');
-    return;
+  if (!phone || phone.length !== 10 || isNaN(phone)) {
+    showToast('⚠️ Enter a valid 10-digit phone')
+    return
   }
   if (!date) {
-    showToast('⚠️ Please select a date');
-    return;
+    showToast('⚠️ Please select a date')
+    return
   }
 
-  // 3. Prepare the data
+  // Sort slots in order
   const sorted = [...selected].sort(
     (a, b) => ground.slots.findIndex(s => s.time === a) - ground.slots.findIndex(s => s.time === b)
-  );
-  const totalCost = sorted.length * ground.price;
+  )
+  const totalCost = sorted.length * ground.price
 
-  const pendingBooking = {
-    groundId,
-    groundName: ground.name,
-    name,
-    phone,
-    date,
-    slots: sorted,
-    total: totalCost
-  };
+  // Disable button
+  const bookBtn       = document.getElementById(`bookBtn-${groundId}`)
+  bookBtn.disabled    = true
+  bookBtn.textContent = '⏳ Booking...'
 
-  // 4. Save to LocalStorage and Redirect
-  // This "passes" the data to the payment.html page
-  localStorage.setItem('pendingBooking', JSON.stringify(pendingBooking));
-  
-  showToast('Redirecting to payment...');
-  
-  // Give the toast a moment to show before moving pages
-  setTimeout(() => {
-    window.location.href = 'payment.html';
-  }, 800);
+  try {
+    // Send to backend
+    const res = await fetch(`${API_URL}/api/bookings`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        groundId,
+        groundName: ground.name,
+        name,
+        phone,
+        date,
+        slots:  sorted,
+        total:  totalCost
+      })
+    })
+
+    const data = await res.json()
+
+    if (data.success) {
+      // Save booking details for confirmation page
+      localStorage.setItem('cricbox_last_booking', JSON.stringify({
+        bookingId:  data.bookingId,
+        groundName: ground.name,
+        area:       ground.area,
+        date:       date,
+        slots:      sorted,
+        total:      totalCost,
+        name:       name,
+        phone:      phone
+      }))
+
+      // Mark slots as booked locally
+      sorted.forEach(time => {
+        const slot = ground.slots.find(s => s.time === time)
+        if (slot) slot.free = false
+      })
+
+      selectedSlots[groundId] = []
+      closeModal()
+
+      // Go to confirmation page
+      window.location.href = 'booking-confirmation.html'
+
+    } else {
+      showToast(`⚠️ ${data.error}`)
+      bookBtn.disabled    = false
+      bookBtn.textContent = '🏏 Try Again'
+    }
+
+  } catch (err) {
+    console.error('Booking error:', err)
+    showToast('⚠️ Could not connect to server')
+    bookBtn.disabled    = false
+    bookBtn.textContent = '🏏 Confirm Booking'
+  }
 }
 
 
