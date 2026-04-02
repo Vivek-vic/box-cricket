@@ -772,68 +772,23 @@ async function handleBooking(groundId) {
   )
   const totalCost = sorted.length * ground.price
 
-  // Disable button
-  const bookBtn       = document.getElementById(`bookBtn-${groundId}`)
-  bookBtn.disabled    = true
-  bookBtn.textContent = '⏳ Booking...'
+  // ── Save to localStorage → go to payment page ──
+  // Backend is NOT called here yet.
+  // payment.js handles the actual booking after payment confirmation.
+  localStorage.setItem('pendingBooking', JSON.stringify({
+    groundId:   groundId,
+    groundName: ground.name,
+    area:       ground.area,
+    name:       name,
+    phone:      phone,
+    date:       date,
+    slots:      sorted,
+    total:      totalCost
+  }))
 
-  try {
-    // Send to backend
-    const res = await fetch(`${API_URL}/api/bookings`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        groundId,
-        groundName: ground.name,
-        name,
-        phone,
-        date,
-        slots:  sorted,
-        total:  totalCost
-      })
-    })
-
-    const data = await res.json()
-
-    if (data.success) {
-      // Save booking details for confirmation page
-      localStorage.setItem('cricbox_last_booking', JSON.stringify({
-        bookingId:  data.bookingId,
-        groundName: ground.name,
-        area:       ground.area,
-        date:       date,
-        slots:      sorted,
-        total:      totalCost,
-        name:       name,
-        phone:      phone
-      }))
-
-      // Mark slots as booked locally
-      sorted.forEach(time => {
-        const slot = ground.slots.find(s => s.time === time)
-        if (slot) slot.free = false
-      })
-
-      selectedSlots[groundId] = []
-      closeModal()
-
-      // Go to confirmation page
-      window.location.href = 'booking-confirmation.html'
-
-    } else {
-      showToast(`⚠️ ${data.error}`)
-      bookBtn.disabled    = false
-      bookBtn.textContent = '🏏 Try Again'
-    }
-
-  } catch (err) {
-    console.error('Booking error:', err)
-    showToast('⚠️ Could not connect to server')
-    bookBtn.disabled    = false
-    bookBtn.textContent = '🏏 Confirm Booking'
-  }
+  closeModal()
+  window.location.href = 'payment.html'
 }
-
 
 // ============================================================
 //  CLOSE MODAL

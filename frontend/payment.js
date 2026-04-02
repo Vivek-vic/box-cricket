@@ -1,85 +1,190 @@
+// ============================================================
+//  PAYMENT PAGE — payment.js
+// ============================================================
+
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
-  : 'https://cricbox-backend-kvv3.onrender.com';
+  : 'https://cricbox-backend-kvv3.onrender.com'
 
-const pending = JSON.parse(localStorage.getItem('pendingBooking'));
-const user = JSON.parse(localStorage.getItem('cricbox_user'));
+// ── Load pending booking from localStorage ──────────────────
+const pending = JSON.parse(localStorage.getItem('pendingBooking'))
+const user    = JSON.parse(localStorage.getItem('cricbox_user'))
 
-// Redirect if data is missing
+// If no booking data — go back to grounds
 if (!pending || !user) {
-    window.location.href = 'index.html';
+  window.location.href = 'index.html'
 }
 
-// Initial UI setup
-document.getElementById('btnAmount').textContent = pending.total;
+// ── Format date nicely ───────────────────────────────────────
+function formatDate(dateStr) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day:     'numeric',
+    month:   'long',
+    year:    'numeric'
+  })
+}
+
+// ── Format slots nicely ──────────────────────────────────────
+function formatSlots(slots) {
+  if (slots.length === 1) return slots[0]
+  return `${slots[0]} → ${slots[slots.length - 1]}`
+}
+
+// ── Populate the booking ticket ──────────────────────────────
+document.getElementById('btnAmount').textContent = pending.total
 
 document.getElementById('ticketContent').innerHTML = `
-    <div class="ticket-row">
-        <span class="label">Ground</span>
-        <span class="value">${pending.groundName}</span>
-    </div>
-    <div class="ticket-row">
-        <span class="label">Date</span>
-        <span class="value">${pending.date}</span>
-    </div>
-    <div class="ticket-row">
-        <span class="label">Slots</span>
-        <span class="value">${pending.slots.join(', ')}</span>
-    </div>
-    <div class="ticket-row">
-        <span class="label">Booked by</span>
-        <span class="value">${user.name}</span>
-    </div>
-    <div class="total-section">
-        <span style="font-weight:700; color:var(--text-dark)">Total Payable</span>
-        <span class="total-price">₹${pending.total}</span>
-    </div>
-`;
+  <div class="ticket-head">📋 Booking Summary</div>
 
-// Handle Payment Method Selection UI
-const cards = document.querySelectorAll('.method-card');
+  <div class="ticket-row">
+    <span class="t-label">Ground</span>
+    <span class="t-value">${pending.groundName}</span>
+  </div>
+
+  <div class="ticket-row">
+    <span class="t-label">Date</span>
+    <span class="t-value">${formatDate(pending.date)}</span>
+  </div>
+
+  <div class="ticket-row">
+    <span class="t-label">Time</span>
+    <span class="t-value">${formatSlots(pending.slots)}</span>
+  </div>
+
+  <div class="ticket-row">
+    <span class="t-label">Duration</span>
+    <span class="t-value">${pending.slots.length} hour${pending.slots.length > 1 ? 's' : ''}</span>
+  </div>
+
+  <div class="ticket-row">
+    <span class="t-label">Booked by</span>
+    <span class="t-value">${pending.name}</span>
+  </div>
+
+  <div class="ticket-row">
+    <span class="t-label">Phone</span>
+    <span class="t-value">${pending.phone}</span>
+  </div>
+
+  <div class="ticket-divider"></div>
+
+  <div class="ticket-total-row">
+    <span class="ticket-total-label">Total Payable</span>
+    <span class="ticket-total-amount">₹${pending.total}</span>
+  </div>
+`
+
+// ── Payment method selection ─────────────────────────────────
+const cards = document.querySelectorAll('.method-card')
 cards.forEach(card => {
-    card.addEventListener('click', () => {
-        cards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-    });
-});
+  card.addEventListener('click', () => {
+    cards.forEach(c => c.classList.remove('active'))
+    card.classList.add('active')
+  })
+})
 
+
+// ── Process Payment ──────────────────────────────────────────
 async function processPayment() {
-    const btn = document.getElementById('finalPayBtn');
-    const method = document.querySelector('input[name="payMethod"]:checked').value;
-    
-    btn.disabled = true;
-    btn.innerHTML = '⚙️ Verifying...';
+  const btn    = document.getElementById('finalPayBtn')
+  const method = document.querySelector('input[name="payMethod"]:checked').value
 
-    try {
-        const res = await fetch(`${API_URL}/api/bookings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...pending,
-                paymentMethod: method
-            })
-        });
+  // Show processing state
+  btn.disabled    = true
+  btn.innerHTML   = '⏳ Processing...'
 
-        const data = await res.json();
+  // Simulate payment processing delay (1.5 seconds)
+  // In real Razorpay, this is where the payment gateway opens
+  await new Promise(resolve => setTimeout(resolve, 1500))
 
-        if (data.success) {
-            btn.style.background = '#28a745';
-            btn.innerHTML = '✅ Confirmed!';
-            
-            // Show a nice success alert
-            setTimeout(() => {
-                alert(`Booking Successful! \nYour ID is #${data.bookingId}`);
-                localStorage.removeItem('pendingBooking');
-                window.location.href = 'index.html';
-            }, 1000);
-        } else {
-            throw new Error(data.error);
-        }
-    } catch (err) {
-        alert('Payment Failed: ' + err.message);
-        btn.disabled = false;
-        btn.innerHTML = `Confirm & Pay ₹${pending.total}`;
+  try {
+    // Send booking to backend
+    const res = await fetch(`${API_URL}/api/bookings`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        groundId:   pending.groundId,
+        groundName: pending.groundName,
+        name:       pending.name,
+        phone:      pending.phone,
+        date:       pending.date,
+        slots:      pending.slots,
+        total:      pending.total,
+        paymentMethod: method
+      })
+    })
+
+    const data = await res.json()
+
+    if (data.success) {
+      // ✅ Payment + Booking successful
+
+      btn.style.background = '#1a8c52'
+      btn.innerHTML        = '✅ Payment Successful!'
+
+      // Save full booking details for confirmation page
+      localStorage.setItem('cricbox_last_booking', JSON.stringify({
+        bookingId:     data.bookingId,
+        groundName:    pending.groundName,
+        area:          pending.area || '',
+        date:          pending.date,
+        slots:         pending.slots,
+        total:         pending.total,
+        name:          pending.name,
+        phone:         pending.phone,
+        paymentMethod: method
+      }))
+
+      // Clear the pending booking
+      localStorage.removeItem('pendingBooking')
+
+      // Short delay then go to confirmation page
+      setTimeout(() => {
+        window.location.href = 'booking-confirmation.html'
+      }, 1000)
+
+    } else {
+      throw new Error(data.error || 'Booking failed')
     }
+
+  } catch (err) {
+    console.error('Payment error:', err)
+
+    btn.disabled  = false
+    btn.innerHTML = `🏏 Confirm &amp; Pay ₹${pending.total}`
+    btn.style.background = ''
+
+    // Show error message on page instead of alert
+    showPaymentError(err.message)
+  }
+}
+
+
+// ── Show error message on page ───────────────────────────────
+function showPaymentError(message) {
+  // Remove existing error if any
+  const existing = document.getElementById('payError')
+  if (existing) existing.remove()
+
+  const err = document.createElement('div')
+  err.id    = 'payError'
+  err.style.cssText = `
+    background: #fdf0ee;
+    border: 1px solid #f5c6c0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #c0392b;
+    margin-top: 12px;
+    font-weight: 500;
+  `
+  err.textContent = `⚠️ ${message}. Please try again.`
+
+  const btn = document.getElementById('finalPayBtn')
+  btn.parentNode.insertBefore(err, btn.nextSibling)
+
+  // Auto remove after 4 seconds
+  setTimeout(() => err.remove(), 4000)
 }
