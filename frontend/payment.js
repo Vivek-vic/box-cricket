@@ -10,6 +10,13 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.hos
 const pending = JSON.parse(localStorage.getItem('pendingBooking'))
 const user    = JSON.parse(localStorage.getItem('cricbox_user'))
 
+// ── Convenience Fee Calculation ────────────────────────────
+const CONVENIENCE_FEE_PER_HOUR = 8
+
+const slotCount       = pending.slots.length
+const convenienceFee  = slotCount * CONVENIENCE_FEE_PER_HOUR
+const finalTotal      = pending.total + convenienceFee
+
 // If no booking data — go back to grounds
 if (!pending || !user) {
   window.location.href = 'index.html'
@@ -33,7 +40,7 @@ function formatSlots(slots) {
 }
 
 // ── Populate the booking ticket ──────────────────────────────
-document.getElementById('btnAmount').textContent = pending.total
+document.getElementById('btnAmount').textContent = finalTotal
 
 document.getElementById('ticketContent').innerHTML = `
   <div class="ticket-head">📋 Booking Summary</div>
@@ -70,10 +77,22 @@ document.getElementById('ticketContent').innerHTML = `
 
   <div class="ticket-divider"></div>
 
-  <div class="ticket-total-row">
-    <span class="ticket-total-label">Total Payable</span>
-    <span class="ticket-total-amount">₹${pending.total}</span>
-  </div>
+<div class="ticket-row">
+  <span class="t-label">Ground Charges</span>
+  <span class="t-value">₹${pending.total}</span>
+</div>
+
+<div class="ticket-row">
+  <span class="t-label">Convenience Fee</span>
+  <span class="t-value">₹${convenienceFee}</span>
+</div>
+
+<div class="ticket-divider"></div>
+
+<div class="ticket-total-row">
+  <span class="ticket-total-label">Total Payable</span>
+  <span class="ticket-total-amount">₹${finalTotal}</span>
+</div>
 `
 
 // ── Payment method selection ─────────────────────────────────
@@ -90,6 +109,10 @@ cards.forEach(card => {
 async function processPayment() {
   const btn    = document.getElementById('finalPayBtn')
   const method = document.querySelector('input[name="payMethod"]:checked').value
+  // If Pay at Venue → only pay convenience fee
+if (method === 'venue') {
+  alert(`Please pay ₹${convenienceFee} as convenience fee to confirm booking`)
+}
 
   // Show processing state
   btn.disabled    = true
@@ -104,16 +127,17 @@ async function processPayment() {
     const res = await fetch(`${API_URL}/api/bookings`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        groundId:   pending.groundId,
-        groundName: pending.groundName,
-        name:       pending.name,
-        phone:      pending.phone,
-        date:       pending.date,
-        slots:      pending.slots,
-        total:      pending.total,
-        paymentMethod: method
-      })
+     body: JSON.stringify({
+  groundId:   pending.groundId,
+  groundName: pending.groundName,
+  name:       pending.name,
+  phone:      pending.phone,
+  date:       pending.date,
+  slots:      pending.slots,
+  total:      pending.total,
+  convenienceFee: convenienceFee,
+  paymentType: method
+})
     })
 
     const data = await res.json()
@@ -131,7 +155,8 @@ async function processPayment() {
         area:          pending.area || '',
         date:          pending.date,
         slots:         pending.slots,
-        total:         pending.total,
+        total:         finalTotal,
+        convenienceFee: convenienceFee,
         name:          pending.name,
         phone:         pending.phone,
         paymentMethod: method
@@ -153,7 +178,7 @@ async function processPayment() {
     console.error('Payment error:', err)
 
     btn.disabled  = false
-    btn.innerHTML = `🏏 Confirm &amp; Pay ₹${pending.total}`
+    btn.innerHTML = `🏏 Confirm &amp; Pay ₹${finalTotal}`
     btn.style.background = ''
 
     // Show error message on page instead of alert

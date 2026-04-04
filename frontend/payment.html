@@ -252,8 +252,10 @@
     <!-- Booking ticket -->
     <div class="booking-ticket" id="ticketContent">
       <div class="ticket-head">📋 Booking Summary</div>
-      <div style="text-align:center;color:var(--muted);padding:20px 0;">Loading details…</div>
-    </div>
+<div style="text-align:center;color:var(--muted);padding:20px 0;">
+  Loading booking details…
+</div> 
+   </div>
 
     <!-- Payment method -->
     <div class="pay-section-label">💳 Payment Method</div>
@@ -268,9 +270,17 @@
         <input type="radio" name="payMethod" value="CASH" />
         <div class="method-icon">💵</div>
         <div class="method-name">Cash at Venue</div>
-        <div class="method-sub">Pay on arrival</div>
+        <div class="method-sub">Pay ground at venue + ₹8/hr fee online</div>
       </label>
     </div>
+    <div style="font-size:12px;
+  color:var(--muted);
+  margin-bottom:14px;
+  line-height:1.4;
+">
+  ⚠️ A convenience fee of ₹8/hour is charged for booking.  
+  For Cash at Venue, this fee must be paid online to confirm your slot.
+</div>
 
     <!-- Confirm button -->
     <button class="btn btn-primary pay-btn" id="finalPayBtn" onclick="processPayment()">

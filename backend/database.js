@@ -40,16 +40,17 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS bookings (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    ground_id   INTEGER NOT NULL,
-    ground_name TEXT    NOT NULL,
-    name        TEXT    NOT NULL,
-    phone       TEXT    NOT NULL,
-    date        TEXT    NOT NULL,
-    slots       TEXT    NOT NULL,
-    total       INTEGER NOT NULL,
-    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (ground_id) REFERENCES grounds(id)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ground_id INTEGER,
+    ground_name TEXT,
+    name TEXT,
+    phone TEXT,
+    date TEXT,
+    slots TEXT,
+    total INTEGER,
+    convenience_fee INTEGER,
+    payment_type TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS users (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -617,28 +618,104 @@ function getGroundById(id) {
   }
 }
 
-function createBooking(groundId, groundName, name, phone, date, slots, total) {
-  const saveBooking = db.transaction(() => {
-    const result = db.prepare(`
-      INSERT INTO bookings (ground_id, ground_name, name, phone, date, slots, total)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(groundId, groundName, name, phone, date, slots.join(','), total)
+// function createBooking(groundId, groundName, name, phone, date, slots, total) {
+//   const saveBooking = db.transaction(() => {
+//     const result = db.prepare(`
+//       INSERT INTO bookings (ground_id, ground_name, name, phone, date, slots, total)
+//       VALUES (?, ?, ?, ?, ?, ?, ?)
+//     `).run(groundId, groundName, name, phone, date, slots.join(','), total)
 
-    const markSlot = db.prepare(`
-      UPDATE slots SET is_free = 0
-      WHERE ground_id = ? AND time = ?
-    `)
+//     const markSlot = db.prepare(`
+//       UPDATE slots SET is_free = 0
+//       WHERE ground_id = ? AND time = ?
+//     `)
 
-    for (const time of slots) {
-      markSlot.run(groundId, time)
-    }
+//     for (const time of slots) {
+//       markSlot.run(groundId, time)
+//     }
 
-    return result.lastInsertRowid
-  })
+//     return result.lastInsertRowid
+//   })
+function createBooking(
+  groundId,
+  groundName,
+  name,
+  phone,
+  date,
+  slots,
+  total,
+  convenienceFee,
+  paymentType
+) {
+  const result = db.prepare(`
+    INSERT INTO bookings (
+      ground_id,
+      ground_name,
+      name,
+      phone,
+      date,
+      slots,
+      total,
+      convenience_fee,
+      payment_type
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    groundId,
+    groundName,
+    name,
+    phone,
+    date,
+    slots.join(','),
+    total,
+    convenienceFee,
+    paymentType
+  )
 
-  return saveBooking()
+  return result.lastInsertRowid
 }
+//   return saveBooking()
+// }
 
+// function checkSlotAvailability(groundId, date, slots) {
+//   const bookings = db.prepare(`
+//     SELECT slots FROM bookings
+//     WHERE ground_id = ? AND date = ?
+//   `).all(groundId, date)
+
+//   const bookedSlots = bookings.flatMap(b => b.slots.split(','))
+
+//   return slots.every(slot => !bookedSlots.includes(slot))
+// }
+function getGroundsWithAvailability(date) {
+  const grounds = db.prepare('SELECT * FROM grounds').all()
+
+  const allSlots = [
+    "6 AM","7 AM","8 AM","9 AM",
+    "4 PM","5 PM","6 PM","7 PM",
+    "8 PM","9 PM","10 PM","11 PM"
+  ]
+
+  return grounds.map(g => {
+    const bookings = db.prepare(`
+      SELECT slots FROM bookings
+      WHERE ground_id = ? AND date = ?
+    `).all(g.id, date)
+
+    const bookedSlots = bookings.flatMap(b => b.slots.split(','))
+
+    const slots = allSlots.map(time => ({
+      time,
+      free: !bookedSlots.includes(time)
+    }))
+
+    return {
+      ...g,
+      amenities: g.amenities.split(','),
+      slots
+    }
+  })
+}
 function getAllBookings() {
   return db.prepare(
     'SELECT * FROM bookings ORDER BY created_at DESC'
@@ -673,13 +750,25 @@ function updateUser(name, age, latitude, longitude, area, phone) {
   `).run(name, age, latitude, longitude, area, phone)
 }
 
+// module.exports = {
+//   getAllGrounds,
+//   getGroundById,
+//   createBooking,
+//   getAllBookings,
+//   getBookingsByGround,
+//   getUserByPhone,    // ← add
+//   createUser,        // ← add
+//   updateUser         // ← add
+// }
+
 module.exports = {
   getAllGrounds,
   getGroundById,
+  getGroundsWithAvailability,
   createBooking,
   getAllBookings,
-  getBookingsByGround,
-  getUserByPhone,    // ← add
-  createUser,        // ← add
-  updateUser         // ← add
+  checkSlotAvailability,
+  getUserByPhone,
+  createUser,
+  updateUser
 }
