@@ -18,6 +18,9 @@ const convenienceFee  = slotCount * CONVENIENCE_FEE_PER_HOUR
 const finalTotal      = pending.total + convenienceFee
 let payableAmount = finalTotal   // default (online)
 
+const btn = document.getElementById('finalPayBtn')
+btn.innerHTML = `🏏 Confirm & Pay ₹${finalTotal}`
+
 // If no booking data — go back to grounds
 if (!pending || !user) {
   window.location.href = 'index.html'
@@ -105,13 +108,39 @@ cards.forEach(card => {
 
     const method = card.querySelector('input').value
 
+    const btn = document.getElementById('finalPayBtn')
+
+    // 🔥 ADD THIS (label + note)
+    const totalLabel = document.querySelector('.ticket-total-label')
+    const cashNote   = document.getElementById('cashNote')
+
     if (method === 'CASH') {
       payableAmount = convenienceFee
+
+      // Button update
+      btn.innerHTML = `🏏 Pay ₹${convenienceFee} now <br>
+        <span style="font-size:12px;font-weight:400">
+          ₹${pending.total} at venue
+        </span>`
+
+      // 🔥 NEW: label change
+      totalLabel.textContent = 'Pay Now'
+
+      // 🔥 NEW: show note
+      if (cashNote) cashNote.style.display = 'block'
+
     } else {
       payableAmount = finalTotal
+
+      btn.innerHTML = `🏏 Confirm & Pay ₹${finalTotal}`
+
+      // 🔥 NEW: reset label
+      totalLabel.textContent = 'Total Payable'
+
+      // 🔥 NEW: hide note
+      if (cashNote) cashNote.style.display = 'none'
     }
 
-    // Update button amount
     document.getElementById('btnAmount').textContent = payableAmount
   })
 })
