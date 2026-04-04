@@ -16,6 +16,7 @@ const CONVENIENCE_FEE_PER_HOUR = 8
 const slotCount       = pending.slots.length
 const convenienceFee  = slotCount * CONVENIENCE_FEE_PER_HOUR
 const finalTotal      = pending.total + convenienceFee
+let payableAmount = finalTotal   // default (online)
 
 // If no booking data — go back to grounds
 if (!pending || !user) {
@@ -101,6 +102,17 @@ cards.forEach(card => {
   card.addEventListener('click', () => {
     cards.forEach(c => c.classList.remove('active'))
     card.classList.add('active')
+
+    const method = card.querySelector('input').value
+
+    if (method === 'CASH') {
+      payableAmount = convenienceFee
+    } else {
+      payableAmount = finalTotal
+    }
+
+    // Update button amount
+    document.getElementById('btnAmount').textContent = payableAmount
   })
 })
 
@@ -134,7 +146,7 @@ if (method === 'venue') {
   phone:      pending.phone,
   date:       pending.date,
   slots:      pending.slots,
-  total:      pending.total,
+  total:      payableAmount,
   convenienceFee: convenienceFee,
   paymentType: method
 })
@@ -178,7 +190,7 @@ if (method === 'venue') {
     console.error('Payment error:', err)
 
     btn.disabled  = false
-    btn.innerHTML = `🏏 Confirm &amp; Pay ₹${finalTotal}`
+    btn.innerHTML = `🏏 Confirm &amp; Pay ₹${payableAmount}`
     btn.style.background = ''
 
     // Show error message on page instead of alert
