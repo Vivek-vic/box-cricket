@@ -767,7 +767,7 @@ module.exports = {
   getGroundsWithAvailability,
   createBooking,
   getAllBookings,
-  checkSlotAvailability,
+  getBookingsByGround,
   getUserByPhone,
   createUser,
   updateUser

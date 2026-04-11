@@ -10,6 +10,9 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.hos
 const pending = JSON.parse(localStorage.getItem('pendingBooking'))
 const user    = JSON.parse(localStorage.getItem('cricbox_user'))
 
+if (!pending || !user) {
+  window.location.href = 'index.html'
+}
 // ── Convenience Fee Calculation ────────────────────────────
 const CONVENIENCE_FEE_PER_HOUR = 8
 

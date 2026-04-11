@@ -1,12 +1,8 @@
-// ============================================================
-//  BOOKINGS ROUTES — routes/bookings.js (UPDATED)
-// ============================================================
-
 const express = require('express')
 const router  = express.Router()
 const db      = require('../database.js')
 
-// ── POST /api/bookings — create a new booking ───────────────
+// POST /api/bookings
 router.post('/', function(req, res) {
   try {
     const {
@@ -16,67 +12,32 @@ router.post('/', function(req, res) {
       phone,
       date,
       slots,
+      total,
       convenienceFee,
       paymentType
     } = req.body
 
-    // ── VALIDATION ──────────────────────────────────────────
-    if (!groundId || !name || !phone || !date || !slots || !paymentType) {
+    if (!groundId || !name || !phone || !date || !slots || !total) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields'
       })
     }
 
-    if (!Array.isArray(slots) || slots.length === 0 || slots.length > 3) {
+    if (!Array.isArray(slots) || slots.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid slot selection'
+        error: 'Slots must be a non-empty array'
       })
     }
 
-    if (!/^\d{10}$/.test(phone)) {
+    if (slots.length > 3) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid phone number'
+        error: 'Maximum 3 slots allowed per booking'
       })
     }
 
-    // ── CHECK GROUND ───────────────────────────────────────
-    const ground = db.getGroundById(groundId)
-    if (!ground) {
-      return res.status(404).json({
-        success: false,
-        error: 'Ground not found'
-      })
-    }
-
-    // ── CHECK SLOT AVAILABILITY ────────────────────────────
-    const available = db.checkSlotAvailability(groundId, date, slots)
-    if (!available) {
-      return res.status(400).json({
-        success: false,
-        error: 'One or more slots already booked'
-      })
-    }
-
-    // ── CALCULATE PRICES (SECURE) ──────────────────────────
-    const groundTotal     = slots.length * ground.price
-    const platformFee     = slots.length * 8   // ₹8/hour
-    const finalTotal      = groundTotal + platformFee
-
-    // ── PAYMENT RULES ──────────────────────────────────────
-    if (paymentType === 'CASH') {
-      // Only convenience fee should be paid online
-      if (!convenienceFee || convenienceFee !== platformFee) {
-        return res.status(400).json({
-          success: false,
-          error: 'Convenience fee mismatch'
-        })
-      }
-    }
-
-    // ── SAVE BOOKING ───────────────────────────────────────
     const bookingId = db.createBooking(
       groundId,
       groundName,
@@ -84,24 +45,30 @@ router.post('/', function(req, res) {
       phone,
       date,
       slots,
-      groundTotal,
-      platformFee,
-      paymentType
+      total,
+      convenienceFee || 0,
+      paymentType || 'UPI'
     )
 
-    // ── RESPONSE ───────────────────────────────────────────
+    // Mark slots as booked in the slots table
+    const markSlot = require('better-sqlite3')(
+      require('path').join(__dirname, '../cricbox.db')
+    )
+    slots.forEach(time => {
+      markSlot.prepare(
+        'UPDATE slots SET is_free = 0 WHERE ground_id = ? AND time = ?'
+      ).run(groundId, time)
+    })
+    markSlot.close()
+
     res.status(201).json({
       success: true,
       bookingId,
-      breakdown: {
-        groundTotal,
-        convenienceFee: platformFee,
-        finalTotal
-      }
+      message: `Booking confirmed at ${groundName}`
     })
 
   } catch (err) {
-    console.error('Error creating booking:', err)
+    console.error('Booking error:', err)
     res.status(500).json({
       success: false,
       error: 'Failed to create booking'
@@ -109,17 +76,14 @@ router.post('/', function(req, res) {
   }
 })
 
-// ── GET /api/bookings — admin ──────────────────────────────
+// GET /api/bookings
 router.get('/', function(req, res) {
   try {
     const bookings = db.getAllBookings()
     res.json({ success: true, bookings })
   } catch (err) {
-    console.error(err)
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load bookings'
-    })
+    console.error('Error fetching bookings:', err)
+    res.status(500).json({ success: false, error: 'Failed to load bookings' })
   }
 })
 
