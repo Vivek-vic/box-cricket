@@ -47,7 +47,7 @@ function formatSlots(slots) {
 }
 
 // ── Populate the booking ticket ──────────────────────────────
-document.getElementById('btnAmount').textContent = finalTotal
+// document.getElementById('btnAmount').textContent = finalTotal
 
 document.getElementById('ticketContent').innerHTML = `
   <div class="ticket-head">📋 Booking Summary</div>
@@ -144,7 +144,7 @@ cards.forEach(card => {
       if (cashNote) cashNote.style.display = 'none'
     }
 
-    document.getElementById('btnAmount').textContent = payableAmount
+    // document.getElementById('btnAmount').textContent = payableAmount
   })
 })
 
@@ -253,7 +253,6 @@ function showPaymentError(message) {
 
   const btn = document.getElementById('finalPayBtn')
   btn.parentNode.insertBefore(err, btn.nextSibling)
-
-  // Auto remove after 4 seconds
-  setTimeout(() => err.remove(), 4000)
 }
+// Auto remove after 4 seconds
+  setTimeout(() => err.remove(), 4000)
